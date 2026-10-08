@@ -1,0 +1,78 @@
+--// DAMAGE ESCAPE TELEPORT
+--// LocalScript
+
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+
+--==================================================
+-- SETTINGS
+--==================================================
+
+local DAMAGE_THRESHOLD = 10
+local TELEPORT_DISTANCE = 30
+local RETURN_DELAY = 1
+
+--==================================================
+-- VARIABLES
+--==================================================
+
+local character
+local humanoid
+local rootPart
+local lastHealth
+local teleporting = false
+
+--==================================================
+-- CHARACTER SETUP
+--==================================================
+
+local function setupCharacter(newCharacter)
+	character = newCharacter
+	humanoid = character:WaitForChild("Humanoid")
+	rootPart = character:WaitForChild("HumanoidRootPart")
+
+	lastHealth = humanoid.Health
+	teleporting = false
+
+	humanoid.HealthChanged:Connect(function(currentHealth)
+		if not rootPart or not rootPart.Parent then
+			return
+		end
+
+		local damage = lastHealth - currentHealth
+
+		if damage > DAMAGE_THRESHOLD and not teleporting then
+			teleporting = true
+
+			-- Ursprüngliche Position speichern
+			local originalCFrame = rootPart.CFrame
+
+			-- 30 Studs nach hinten teleportieren
+			rootPart.CFrame =
+				originalCFrame + (-originalCFrame.LookVector * TELEPORT_DISTANCE)
+
+			-- 1 Sekunde warten
+			task.wait(RETURN_DELAY)
+
+			-- Zurück zur ursprünglichen Position
+			if rootPart and rootPart.Parent then
+				rootPart.CFrame = originalCFrame
+			end
+
+			teleporting = false
+		end
+
+		lastHealth = currentHealth
+	end)
+end
+
+--==================================================
+-- START
+--==================================================
+
+if player.Character then
+	setupCharacter(player.Character)
+end
+
+player.CharacterAdded:Connect(setupCharacter)
